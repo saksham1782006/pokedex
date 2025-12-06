@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pokédex</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #e63946;
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        padding-top: 40px;
+    }
+
+    .pokedex {
+        width: 350px;
+        padding: 20px;
+        background: #d90429;
+        border: 8px solid #222;
+        border-radius: 20px;
+        box-shadow: inset -6px -6px #b5001d, inset 6px 6px #ff4365;
+    }
+
+    h1 {
+        text-align: center;
+        color: white;
+        margin-bottom: 10px;
+        font-size: 28px;
+        text-shadow: 2px 2px #000;
+    }
+
+    .screen {
+        background: #222;
+        height: 280px;
+        border-radius: 12px;
+        padding: 10px;
+        position: relative;
+    }
+
+    .screen-inner {
+        background: #aad8e6;
+        height: 100%;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+
+        /* 🔥 FIX: enable scrolling inside screen */
+        overflow-y: auto;
+        overflow-x: hidden;
+        text-wrap: wrap;
+    }
+
+    /* Optional smooth scrollbar */
+    .screen-inner::-webkit-scrollbar {
+        width: 6px;
+    }
+    .screen-inner::-webkit-scrollbar-thumb {
+        background: #1d3557;
+        border-radius: 10px;
+    }
+
+    img {
+        width: 140px;
+        max-width: 100%;
+    }
+
+    .info,
+    #pokeType,
+    #pokeWeakness,
+    #stats {
+        word-wrap: break-word;
+        max-width: 100%;
+        font-size: 15px;
+        margin-top: 6px;
+    }
+
+    input {
+        width: 60%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 2px solid #333;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: none;
+        background: #1d3557;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 5px;
+    }
+
+    .stats {
+        margin-top: 8px;
+        text-align: left;
+    }
+
+    .stat-bar {
+        height: 8px;
+        background: #457b9d;
+        border-radius: 5px;
+        margin-bottom: 3px;
+    }
+
+    .stat-fill {
+        height: 100%;
+        background: #1d3557;
+        border-radius: 5px;
+        width: 0%;
+    }
+</style>
+</head>
+<body>
+
+<div class="pokedex">
+    <h1>Pokédex</h1>
+
+    <div class="screen">
+        <div class="screen-inner">
+            <img id="pokeImg" src="">
+            <div id="pokeName" class="info"></div>
+            <div id="pokeType"></div>
+            <div id="pokeWeakness"></div>
+            <div id="stats" class="stats"></div>
+        </div>
+    </div>
+
+    <br>
+
+    <input id="pokeInput" placeholder="Enter Pokémon name">
+    <button onclick="searchPokemon()">Search</button>
+</div>
+
+<script>
+const api = {
+    url : "https://pokeapi.co/api/v2/pokemon/",
+    async fetchPokemon(name){
+        const res = await fetch(this.url + name.toLowerCase());
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+    }
+};
+
+const weaknesses = {
+    fire: ["water", "ground", "rock"],
+    water: ["electric", "grass"],
+    grass: ["fire", "ice", "poison", "flying", "bug"],
+    electric: ["ground"],
+    ground: ["water", "grass", "ice"],
+    rock: ["water", "grass", "fighting", "ground", "steel"],
+    flying: ["electric", "ice", "rock"],
+    normal: ["fighting"],
+    fighting: ["flying", "psychic", "fairy"],
+    ice: ["fire", "fighting", "rock", "steel"],
+    psychic: ["bug", "ghost", "dark"],
+    dark: ["fighting", "bug", "fairy"],
+    ghost: ["ghost", "dark"],
+    dragon: ["ice", "dragon", "fairy"],
+    fairy: ["poison", "steel"],
+    steel: ["fire", "fighting", "ground"],
+    bug: ["fire", "flying", "rock"],
+    poison: ["ground", "psychic"]
+};
+
+async function searchPokemon() {
+    const name = document.getElementById("pokeInput").value.trim();
+    if (!name) return alert("Enter Pokémon name!");
+
+    try {
+        const pokemon = await api.fetchPokemon(name);
+
+        const types = pokemon.types.map(t => t.type.name);
+        const weak = [...new Set(types.flatMap(t => weaknesses[t] || []))];
+
+        document.getElementById("pokeImg").src = pokemon.sprites.front_default;
+        document.getElementById("pokeName").innerHTML = pokemon.name.toUpperCase();
+        document.getElementById("pokeType").innerHTML = `<b>Type:</b> ${types.join(", ")}`;
+        document.getElementById("pokeWeakness").innerHTML = `<b>Weakness:</b> ${weak.join(", ")}`;
+
+        let statsHTML = "";
+        pokemon.stats.forEach(s => {
+            statsHTML += `
+                <div>${s.stat.name}: ${s.base_stat}</div>
+                <div class="stat-bar">
+                    <div class="stat-fill" style="width: ${s.base_stat}%;"></div>
+                </div>
+            `;
+        });
+
+        document.getElementById("stats").innerHTML = statsHTML;
+
+    } catch (err) {
+        alert("Pokémon not found!");
+    }
+}
+</script>
+
+</body>
+</html>
